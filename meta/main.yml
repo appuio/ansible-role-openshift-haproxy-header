@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  author: APPUiO Team
+  description: "Role configuring OpenShift HAProxy router header"
+  company: Puzzle ITC and VSHN
+  license: Apache License, Version 2.0
+  min_ansible_version: 2.2
+  platforms:
+  - name: EL
+    versions:
+    - 7
+  categories:
+  - cloud
+dependencies:
+- src: git+file:///vagrant/work/ansible-role-openshift-haproxy
+  version: master
+  prestart_scripts:
+    patch-header.sh: "{{ lookup('file', 'files/patch-header.sh') }}"
+  env:
+  - name: SET_REQUEST_HEADER
+    value: "{{ set_request_header | to_nice_yaml }}"

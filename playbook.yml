@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  roles:
+  - role: ansible-role-openshift-haproxy-header
+    routers:
+    - ha-router-ex1
+    set_request_header:
+      Forwarded: for=%[src];host=%[req.hdr(host)]:%[dst_port];proto=%[req.hdr(X-Forwarded-Proto)]
