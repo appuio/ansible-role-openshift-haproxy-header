@@ -1,1 +1,10 @@
 ---
+- include_role:
+    name: "vendor/ansible-role-openshift-haproxy"
+    private: true
+  vars:
+    prestart_scripts:
+      patch-header.sh: "{{ lookup('file', 'files/patch-header.sh') }}"
+    env:
+    - name: SET_REQUEST_HEADER
+      value: "{{ set_request_header | to_nice_yaml }}"

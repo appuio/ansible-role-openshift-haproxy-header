@@ -1,0 +1,78 @@
+---
+- name: Load ansible-module-openshift
+  include_role:
+    name: vendor/ansible-module-openshift
+    private: true
+
+- name: Create prestart entrypoint ConfigMap
+  openshift_resource:
+    namespace: default
+    patch:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: prestart-entrypoint
+      data:
+        prestart.sh: "{{ lookup('file', 'files/prestart.sh') }}"
+  register: entrypoint_configmap
+
+- name: Create prestart scripts ConfigMap
+  openshift_resource:
+    namespace: default
+    patch:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: prestart-scripts
+      data: "{{ prestart_scripts }}"
+  register: prestart_configmap
+
+- name: Patch router deploymentconfig
+  openshift_resource:
+    namespace: default
+    patch:
+      kind: DeploymentConfig
+      metadata:
+        name: "{{ item }}"
+      spec:
+        template:
+          spec:
+            containers:
+            - name: router
+              command:
+              - /usr/bin/prestart.sh
+              - /usr/bin/openshift-router
+              env: "{{ prestart_env + env }}"
+              volumeMounts:
+              - name: prestart-entrypoint
+                mountPath: /usr/bin/prestart.sh
+                subPath: prestart.sh
+              - name: prestart-scripts
+                mountPath: "{{ prestart_dir }}"
+            volumes:
+            - name: prestart-entrypoint
+              configMap:
+                name: prestart-entrypoint
+                defaultMode: 0755
+                items:
+                - key: prestart.sh
+                  path: prestart.sh
+            - name: prestart-scripts
+              configMap:
+                name: prestart-scripts
+                defaultMode: 0755
+  with_items: "{{ routers }}"
+  register: deploymentconfig
+
+- name: Redeploy haproxy to load updated config maps
+  shell: "oc rollout -n default latest {{ item.item }} && oc rollout -n default status dc {{ item.item }}"
+  when: (entrypoint_configmap.changed or prestart_configmap.changed) and not item.changed
+  with_items: "{{ deploymentconfig.results }}"
+  no_log: True
+  ignore_errors: True
+  register: rollout
+
+- name: Print rollout errors in human readable format
+  debug: msg="{% for result in rollout.results %}{{ result.stderr | default('') }}{% endfor %}"
+  when: rollout | failed
+  failed_when: true

@@ -1,0 +1,4 @@
+---
+vendor_roles:
+- src: https://github.com/appuio/ansible-role-openshift-haproxy
+  version: v1.2.0

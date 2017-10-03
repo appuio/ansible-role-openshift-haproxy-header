@@ -1,0 +1,13 @@
+---
+prestart_dir: /var/lib/haproxy/prestart.d/
+prestart_env:
+- name: PRESTART_DIR
+  value: "{{ prestart_dir }}"
+- name: TEMPLATE_FILE
+  value: /tmp/haproxy-config.template
+- name: WRAPPER_SUPPRESS_STDOUT
+  value: "{{ wrapper_suppress_stdout | default(omit) }}"
+- name: WRAPPER_SUPPRESS_STDERR
+  value: "{{ wrapper_suppress_stderr | default(omit) }}"
+- name: WRAPPER_LOGLEVEL
+  value: "{{ wrapper_loglevel | default(omit) }}"
