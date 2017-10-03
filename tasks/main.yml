@@ -7,4 +7,4 @@
       patch-header.sh: "{{ lookup('file', 'files/patch-header.sh') }}"
     env:
     - name: SET_REQUEST_HEADER
-      value: "{{ set_request_header | to_nice_yaml }}"
+      value: "{{ set_request_header | default({}) | to_nice_yaml }}"
